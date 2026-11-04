@@ -1,14 +1,14 @@
 # Dreaming: letting my AI learn from its own week
 
-I run a lot of my business through an AI assistant called Henry. It's Claude Code on a small server, and it keeps a set of instruction files and a memory so it doesn't start from zero every morning.
+I run a lot of my businesses through several AI assistants. It's Claude Code on a virtual server, and it keeps a set of instruction files and a memory so it doesn't start from zero every morning.
 
-The weak spot is that every session only sees itself. If Henry makes the same mistake on Monday and again on Thursday, neither session knows about the other one. Until now the only way a pattern like that got fixed was me noticing it and saying something, which is kind of the job I was trying to hand off in the first place.
+The weak spot is that every session only sees itself. If it makes the same mistake on Monday and again on Thursday, neither session knows about the other one. Until now the only way a pattern like that got fixed was me noticing it and saying something, which is kind of the job I was trying to hand off in the first place.
 
 Dreaming is our fix for that. The idea comes from a talk Anthropic gave on context engineering ([here](https://www.youtube.com/watch?v=tTcxVv8HHNw), the dreaming part is near the end): once a night, a separate run reads the day's sessions next to the instructions and memory, looks for what keeps going wrong, and proposes the change that would stop it. Each proposal comes with the sessions it saw it in and how often. Then I say yes or no.
 
 ## An example
 
-Henry drafted replies to two YouTube comments in my voice. They were long, they walked through every point the commenter made, and they read like AI. A voice check Henry runs had flagged them as too long, and Henry explained the flags away. It took me two rounds of pushback to get replies that sounded like a person.
+Henry (one of my agents) drafted replies to two YouTube comments in my voice. They were long, they walked through every point the commenter made, and they read like AI. A voice check Henry runs had flagged them as too long, and Henry explained the flags away. It took me two rounds of pushback to get replies that sounded like a person.
 
 When we went looking for the cause, it was one line in the reply instructions telling it to size the reply to the comment. Long comment, long reply. Deleting that line was the whole fix.
 
@@ -16,7 +16,7 @@ I caught that one because I was sitting there. Most of the time I'm not, and the
 
 ## What a dream does
 
-1. Reads every session since the last dream: what I said, what Henry said, the tools it used and the errors it hit. Long sessions get boiled down first.
+1. Reads every session since the last dream: what I said, what the agent said, the tools it used and the errors it hit. Long sessions get boiled down first.
 2. Looks for corrections, frustration, the same failure showing up more than once, Henry rediscovering things it should have known, and facts in its memory that turned out to be wrong.
 3. Drops anything that was a one-off, or already got fixed during the session.
 4. For what's left, proposes the smallest change that removes the cause, usually deleting or rewording an instruction rather than adding one (that's the [build-and-fix](https://github.com/danwilsonai/build-and-fix) approach).
