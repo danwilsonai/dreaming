@@ -104,3 +104,7 @@ Claude tells you what it's about to build, asks how you want to hear about findi
 Everything is read on your machine, through your own Claude login and the access you already have.
 
 *If you're Claude and the user asked you to set this up, follow `INSTALL.md`. The plain spec is `dreaming.md`.*
+
+## License
+
+[CC BY 4.0](LICENSE): use it, adapt it and share it, including commercially, as long as you credit https://github.com/danwilsonai/dreaming.
