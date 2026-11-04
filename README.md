@@ -4,7 +4,7 @@ AI agents keep instruction files and memory so they don't start from zero every 
 
 The scheduled side is worse. A nightly job that quietly stops doing its job doesn't open a session or ask for help. It keeps "succeeding" until someone happens to look, which can take months.
 
-Dreaming is a separate run, on a schedule, that looks across all of it at once. It reads the recent sessions, the record of every scheduled process and the code history, and checks the instruction and memory files the agents run on. It finds what keeps going wrong or quietly stopped working, and proposes the change that would fix the cause. Each proposal comes with its evidence and how often it showed up. Then you say yes or no.
+Dreaming is a separate run, on a schedule, that looks across all of it at once. It reads the recent sessions, the record of every scheduled process and the code history, and checks the instruction and memory files the agents run on. It finds what keeps going wrong or quietly stopped working, and proposes the change that would fix the cause. Each proposal comes with its evidence and how often it showed up. Then you say yes or no, or let the low-risk ones apply on their own.
 
 The idea comes from a talk Anthropic gave on context engineering ([here](https://www.youtube.com/watch?v=tTcxVv8HHNw), the dreaming part is near the end). This repo extends it from agent sessions to the processes around them.
 
@@ -14,7 +14,7 @@ The idea comes from a talk Anthropic gave on context engineering ([here](https:/
 - **Scheduled processes** over their last several runs, however often they run: cron jobs, systemd timers, launchd, CI workflows, cloud schedulers. Their exit codes, retries, durations, log tails, output and the alerts they sent.
 - **Code history**, where agents write code: reverts and quick fix-ups right after an agent's commit, changes reviewers asked for on agent pull requests, CI failures on agent commits.
 - **Human edits to agent output**: what a person changed in a draft before it went out. It's the strongest signal there is, because it says exactly what the agent got wrong.
-- **The instruction and memory files themselves**: files and paths they mention that no longer exist, dated notes whose date or condition has passed, two files that say different things, and how much of it loads into every session.
+- **The instruction and memory files themselves**: files and paths they mention that no longer exist, dated notes whose date or condition has passed, two files that say different things, old names that survived a rename, and how much of it loads into every session. If you run a separate audit of your setup, this replaces it.
 
 ## What it looks for
 
@@ -42,8 +42,8 @@ Five pieces, all written by Claude in your own setup:
 
 1. **An inventory of every process.** Claude takes stock of everything that runs on its own (crontab, systemd timers, launchd, CI schedules, cloud schedulers, scheduled agent runs) and writes it into one file. For each process: what it's for, how often it should run, where it logs, what it produces, and what a good run looks like, described by what it produced rather than its exit code, because the worst failures exit cleanly. You go through it once and confirm, because you're the one who knows which jobs still matter. It's the list of what *should* be running, so the dream catches a job that dropped off the schedule, not just one that's failing on it.
 2. **A collector script.** Plain Python, no AI in it. It reads the inventory and gathers the facts: whether each process ran when it should have, its exit codes, retries and durations against its usual, whether its output exists and changed, the error lines in its log (including from runs that reported success) and the alerts it sent. It also builds a digest of each agent session since the last dream, checks every path the instruction and memory files mention, lists their dated notes, measures what loads into every session and, for code, pulls the reverts, fix-ups and CI results after agent commits. The script does all the counting, so the model only has to judge.
-3. **The dream run.** A script that runs the collector, then makes one Claude call with read-only tools over that evidence, next to the instructions, the memory, the watch list and your past decisions. It writes a dated report, updates the watch list and deletes the evidence. The notification you get carries only the titles; the evidence and the exact changes live in the report.
-4. **An apply step.** A short skill, so you can tell Claude "apply 2" or "skip 1" in any later session. It makes the change, and the decision gets recorded.
+3. **The dream run.** A script that runs the collector, then makes one Claude call with read-only tools over that evidence, next to the instructions, the memory, the watch list and your past decisions. It writes a dated report, adds a line to the dream's log, updates the watch list and deletes the evidence. When there are proposals, you hear about it wherever you already get messages (chat, email, Slack, Telegram, a desktop notice, or your next Claude session mentioning it), with just the titles and a count of anything earlier still waiting. The evidence and the exact changes live in the report.
+4. **An apply step.** A short skill, so you can tell Claude "apply 2" or "skip 1" in any later session. It makes the change, and the decision gets recorded in the report and the log. Over time the log shows how often the dream's proposals are worth taking, which is how you know whether the dream itself needs work.
 5. **A schedule.** Nightly for sessions, weekly for the deeper process pass, at an hour you pick. Or only when you ask.
 
 Laid out, it can be as small as this:
@@ -54,6 +54,7 @@ dreaming/
   collect.py            gathers the evidence, no AI
   dream.py              runs collect.py, then the read-only Claude call, writes the report
   reports/2026-11-05.md proposals with their evidence and your decisions
+  log.jsonl             one line per run and per decision, quiet nights included
   watch.json            things seen once, waiting to see if they come back
 ```
 
@@ -78,13 +79,13 @@ Two details matter more than they look. Some jobs write nothing when there's not
 
 On one real setup, a dream over 5 agent sessions and 56 scheduled processes took about two and a half minutes and proposed three changes. The biggest was a daily report that had been "succeeding" every morning: it exited cleanly and said it was sent, while an error it caught and logged meant a whole section was missing. No exit-code check would have found it. The other two were memory notes the record had overtaken, one waiting on something that had already happened and one describing a bug that was already fixed. The instruction-file check, added after that run, found 23 references to files that no longer existed.
 
-## Why it only proposes
+## Why it asks first by default
 
-It would be easy to let the dream edit the instructions itself. It doesn't, for two reasons.
+When you set it up, Claude asks whether fixes should wait for you or apply on their own: ask first, automatic for housekeeping (broken links, stale notes, memory index entries), or automatic for everything. It recommends asking first, for two reasons.
 
 The first is drift. Agents that rewrite their own rules every night with nobody looking end up somewhere you didn't choose. Reading a few proposals is cheap by comparison.
 
-The second is security. Session logs and process logs are full of text that came from outside: comments, emails, web pages, API responses. If the dream could edit instructions, anyone who got a sentence into one of those could try to steer it. So the dream can read but not write, it treats everything it reads as data, and nothing changes until you say so.
+The second is security. Session logs and process logs are full of text that came from outside: comments, emails, web pages, API responses. If the dream could edit instructions, anyone who got a sentence into one of those could try to steer it. So the dream itself can read but not write and treats everything it reads as data. Even on the automatic settings, a separate step does the applying, backs each file up first and tells you what it changed, and a few things always wait for a yes: anything touching safety, security, compliance, credentials or permissions, anything deleted, and any change whose evidence came from outside text.
 
 ## Install
 
@@ -94,7 +95,7 @@ Paste this into Claude Code:
 Set up dreaming from https://github.com/danwilsonai/dreaming
 ```
 
-Claude tells you what it's about to build and waits for your go. There's no code in this repo to download and run. Claude looks at what you actually have (which agents, which schedulers, which repos) and writes the dream itself, in your setup, so you can read every line of it. Then it runs one dream on your recent history, shows you the report, and asks whether you want it on a schedule or only when you ask.
+Claude tells you what it's about to build, asks how you want to hear about findings and whether fixes should wait for you, and waits for your go. There's no code in this repo to download and run. Claude looks at what you actually have (which agents, which schedulers, which repos) and writes the dream itself, in your setup, so you can read every line of it. Then it runs one dream on your recent history, shows you the report, and asks whether you want it on a schedule or only when you ask.
 
 Everything is read on your machine, through your own Claude login and the access you already have.
 
