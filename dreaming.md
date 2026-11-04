@@ -6,6 +6,7 @@ Each session only sees itself, and a scheduled process that quietly stops workin
 
 **What it reads.** Whatever of these the user has:
 - Agent sessions since the last dream: the user's words, the agent's replies, tool calls and tool errors, headless and scheduled runs included. Long sessions are boiled down to a digest first, with the user's words in full.
+- An inventory of every process that should run on its own: what it's for, how often it should run, where it logs, what it produces and what a good run looks like. The user confirms it once, and it's how the dream knows what should be happening, not just what is.
 - Every scheduled process over its last several runs, chosen by count rather than calendar so a weekly or monthly job has enough runs to show a pattern: schedule, exit codes, retries, durations, log tails, what it produced, and the alerts it sent.
 - Code history where agents write code: reverts and fix-ups soon after an agent's commit, changes requested in review on agent pull requests, CI failures on agent commits.
 - Human edits to agent output, where drafts and their final versions can be compared.
@@ -18,6 +19,7 @@ Counts, dates, durations and diffs are computed by code before the model sees th
 - The same mistake or tool failure in more than one session
 - An agent spending many steps rediscovering something its instructions or memory should have told it
 - A fact in memory or instructions that the record shows is wrong or out of date
+- A process that missed runs the inventory says it should have made, one the scheduler runs that the inventory doesn't list, or one listed that no longer runs
 - A process that succeeds but produces nothing, the same thing every time, or something nobody uses
 - A process that retries most runs, keeps getting slower or more expensive, or depends on a credential that is expiring or has quietly stopped working
 - A check that can't actually see what it claims to check

@@ -33,6 +33,41 @@ Anything that was a one-off, or already got fixed, gets dropped. Something real 
 
 Sessions get a light nightly pass. Scheduled processes and code history get a deeper weekly pass, since a pattern in a weekly job needs weeks of runs to show. A quiet night produces no report, and that's fine.
 
+## How it's built
+
+Five pieces, all written by Claude in your own setup:
+
+1. **An inventory of every process.** Claude takes stock of everything that runs on its own (crontab, systemd timers, launchd, CI schedules, cloud schedulers, scheduled agent runs) and writes it into one file. For each process: what it's for, how often it should run, where it logs, what it produces, and what a good run looks like. You go through it once and confirm, because you're the one who knows which jobs still matter. It's the list of what *should* be running, so the dream catches a job that dropped off the schedule, not just one that's failing on it.
+2. **A collector script.** Plain Python, no AI in it. It reads the inventory and gathers the facts: whether each process ran when it should have, its exit codes, retries and durations against its usual, whether its output exists and changed, the error lines in its log and the alerts it sent. It also builds a digest of each agent session since the last dream and, for code, the reverts, fix-ups and CI results after agent commits. The script does all the counting, so the model only has to judge.
+3. **The dream run.** A script that runs the collector, then makes one Claude call with read-only tools over that evidence, next to the instructions, the memory, the watch list and your past decisions. It writes a dated report, updates the watch list and deletes the evidence.
+4. **An apply step.** A short skill, so you can tell Claude "apply 2" or "skip 1" in any later session. It makes the change, and the decision gets recorded.
+5. **A schedule.** Nightly for sessions, weekly for the deeper process pass, at an hour you pick. Or only when you ask.
+
+Laid out, it can be as small as this:
+
+```
+dreaming/
+  processes.yaml        the inventory: what should run, and what a good run looks like
+  collect.py            gathers the evidence, no AI
+  dream.py              runs collect.py, then the read-only Claude call, writes the report
+  reports/2026-11-05.md proposals with their evidence and your decisions
+  watch.json            things seen once, waiting to see if they come back
+```
+
+One inventory entry might look like:
+
+```yaml
+- name: nightly-backup
+  purpose: push config and scripts to the private backup repo
+  schedule: daily 03:00
+  runs_from: crontab
+  log: ~/logs/backup.log
+  output: a new commit on the backup repo
+  good_run: exit 0 and a new commit within 26 hours
+```
+
+When the scheduler and the inventory disagree (a new job nobody listed, a listed job that's gone), the dream proposes updating one or the other.
+
 ## Why it only proposes
 
 It would be easy to let the dream edit the instructions itself. It doesn't, for two reasons.
