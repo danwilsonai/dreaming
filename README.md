@@ -79,6 +79,10 @@ Two details matter more than they look. Some jobs write nothing when there's not
 
 On one real setup, a dream over 5 agent sessions and 56 scheduled processes took about two and a half minutes and proposed three changes. The biggest was a daily report that had been "succeeding" every morning: it exited cleanly and said it was sent, while an error it caught and logged meant a whole section was missing. No exit-code check would have found it. The other two were memory notes the record had overtaken, one waiting on something that had already happened and one describing a bug that was already fixed. The instruction-file check, added after that run, found 23 references to files that no longer existed.
 
+The next run added the instruction-file and code-history checks: 1 session, the same 56 processes, about 195 instruction and memory files and 11 repos, in just under five minutes. It proposed four changes: a job five weeks past its planned removal (the plan's last step never happened), a log writing every line twice, overdue notes in memory, and retired notes taken out of the index but left where recall could still find them. It also flagged two blind spots in its own collector, which is why the dream is in its own inventory.
+
+One thing the record can't show is what you did outside it. One proposal asked for an account to be cancelled that already had been, so the user can add a note to any proposal ("already done", "not needed") without deciding it, and the next dream reads those notes.
+
 ## Why it asks first by default
 
 When you set it up, Claude asks whether fixes should wait for you or apply on their own: ask first, automatic for housekeeping (broken links, stale notes, memory index entries), or automatic for everything. It recommends asking first, for two reasons.

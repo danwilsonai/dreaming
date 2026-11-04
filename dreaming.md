@@ -21,6 +21,8 @@ Counts, dates, durations and diffs are computed by code before the model sees th
 - A fact in memory or instructions that the record shows is wrong or out of date, or a note whose date or condition has passed
 - Two instruction files that contradict each other, or the same fact stated in two places instead of one with a pointer
 - A recent change that renamed or retired something whose old name still survives elsewhere
+- A plan with a last step nobody took ("remove this once X"), where X has happened
+- Retired notes taken out of the index but left where recall can still find them
 - A claim in the instructions the live system contradicts (a schedule, a model, a path), or a point-in-time number with no date
 - An agent that noticed a problem and moved on without fixing it
 - A process that reported success but logged an error along the way
@@ -41,7 +43,9 @@ Loud failures that already page someone are left to whatever handles them; the d
 
 **The log.** One line per run (when, how long, what it read, how many proposals) and one per decision. It proves the dream ran on quiet nights, which leave no report, and it's how the dream gets judged.
 
-**Checking the dream.** The user's accept and reject decisions are kept. Later dreams don't re-propose a rejected change without new evidence, and if most proposals are being rejected, the dream's own instructions are what needs changing.
+**The user's word.** A decision isn't just yes or no. The user often knows what the record can't ("I already cancelled that", "that part isn't needed", "wait"), so they can add a note to a proposal without deciding it. Notes and open proposals go to the next dream with the decisions, so it doesn't repeat what's waiting or ask for something already done. When a proposal needs a step only the user can take, it says which steps are theirs and which are the agent's.
+
+**Checking the dream.** The user's accept and reject decisions are kept. Later dreams don't re-propose a rejected change without new evidence, and if most proposals are being rejected, the dream's own instructions are what needs changing. The dream is also a process like any other: it sits in the inventory, and its own collector is fair game for a proposal, since a check with a blind spot misleads every run after it. A newly added process gets a grace period before a missed run counts against it.
 
 **Boundaries.**
 - The dream itself reads and never edits. Whether its proposals wait for the user or apply on their own is the user's choice: ask first (the default), automatic for housekeeping only, or automatic for everything. Whatever they choose, these are never applied without a yes:
